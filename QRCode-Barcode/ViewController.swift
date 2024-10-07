@@ -47,6 +47,13 @@ class ViewController: UIViewController {
         generateCodes(from: data)
         updateUI()
     }
+    @IBAction func didSelectShareBarButtonItem(_ sender: UIBarButtonItem) {
+        guard let image = codeImageView.image else {
+            displayAlert(withTitle: "Invalid Image", message: "Image is not available.")
+            return
+        }
+        shareImage(image)
+    }
 }
 
 private extension ViewController {
@@ -86,4 +93,20 @@ private extension ViewController {
 fileprivate enum CodeType: CaseIterable {
     case QRCode
     case Barcode
+}
+
+
+fileprivate extension ViewController {
+    // Displays alert if image is not found
+    func displayAlert(withTitle title: String, message: String) {
+        let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
+        present(alert, animated: true, completion: nil)
+    }
+    
+    // Displays Share Sheet
+    func shareImage(_ image: UIImage) {
+        let activityViewController = UIActivityViewController(activityItems: [image], applicationActivities: nil)
+        present(activityViewController, animated: true, completion: nil)
+    }
 }
