@@ -65,6 +65,11 @@
                         </constraints>
                     </view>
                     <navigationItem key="navigationItem" id="f9L-Tc-d85">
+                        <barButtonItem key="leftBarButtonItem" image="qrcode.viewfinder" catalog="system" id="9RC-xG-U1c">
+                            <connections>
+                                <action selector="didSelectScanQRCodeButtonItem:" destination="BYZ-38-t0r" id="FYx-9q-qZe"/>
+                            </connections>
+                        </barButtonItem>
                         <barButtonItem key="rightBarButtonItem" image="square.and.arrow.up" catalog="system" id="Zsc-IZ-A0h">
                             <connections>
                                 <action selector="didSelectShareBarButtonItem:" destination="BYZ-38-t0r" id="Tnh-3X-V7I"/>
@@ -102,6 +107,7 @@
         </scene>
     </scenes>
     <resources>
+        <image name="qrcode.viewfinder" catalog="system" width="128" height="115"/>
         <image name="square.and.arrow.up" catalog="system" width="110" height="128"/>
         <namedColor name="AccentColor">
             <color red="0.0" green="0.46000000000000002" blue="0.89000000000000001" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>

@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import PhotosUI
 
 class ViewController: UIViewController {
     // IBOutlet
@@ -53,6 +54,9 @@ class ViewController: UIViewController {
             return
         }
         shareImage(image)
+    }
+    @IBAction func didSelectScanQRCodeButtonItem(_ sender: UIBarButtonItem) {
+        selectImage()
     }
 }
 
@@ -108,5 +112,92 @@ fileprivate extension ViewController {
     func shareImage(_ image: UIImage) {
         let activityViewController = UIActivityViewController(activityItems: [image], applicationActivities: nil)
         present(activityViewController, animated: true, completion: nil)
+    }
+}
+
+
+// MARK: - Scan QR
+extension ViewController: UIImagePickerControllerDelegate, UINavigationControllerDelegate, UIDocumentPickerDelegate {
+    // Provide an option to select image from Files App or Photos App
+    private func selectImage() {
+        let alert = UIAlertController(title: "Select Image", message: "Select an image from Files App or Photos App", preferredStyle: .actionSheet)
+        alert.addAction(UIAlertAction(title: "Files App", style: .default, handler: { _ in
+            self.selectImageFromFiles()
+        }))
+        alert.addAction(UIAlertAction(title: "Photos App", style: .default, handler: { _ in
+            // Get Authorisation before accessing photos
+            if UIImagePickerController.isSourceTypeAvailable(.photoLibrary) {
+                let status = PHPhotoLibrary.authorizationStatus()
+                if status == .notDetermined {
+                    PHPhotoLibrary.requestAuthorization { status in
+                        if status == .authorized {
+                            self.selectImageFromPhotos()
+                        } else {
+                            // display alert
+                            let alert = UIAlertController(title: "Photos Access Denied", message: "Please provide access to photos in settings", preferredStyle: .alert)
+                            alert.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
+                            DispatchQueue.main.async { [weak self] in
+                                self?.present(alert, animated: true, completion: nil)
+                            }
+                        }
+                    }
+                } else if status == .authorized {
+                    self.selectImageFromPhotos()
+                } else {
+                    // display alert
+                    let alert = UIAlertController(title: "Photos Access Denied", message: "Please provide access to photos in settings", preferredStyle: .alert)
+                    alert.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
+                    DispatchQueue.main.async { [weak self] in
+                        self?.present(alert, animated: true, completion: nil)
+                    }
+                }
+            }
+        }))
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
+        present(alert, animated: true, completion: nil)
+    }
+    
+    // Select an image from Files App
+    private func selectImageFromFiles() {
+        let documentPicker = UIDocumentPickerViewController(forOpeningContentTypes: [.image], asCopy: true)
+        documentPicker.delegate = self
+        present(documentPicker, animated: true, completion: nil)
+    }
+    
+    // DocumentPicker Delegate
+    func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
+        guard let selectedImageURL = urls.first else { return }
+        guard let selectedImageData = try? Data(contentsOf: selectedImageURL) else { return }
+        guard let selectedImage = UIImage(data: selectedImageData) else { return }
+        codeImageView.image = selectedImage
+        scanQRCode(from: selectedImage)
+    }
+    
+    // Select an Image from Photos App
+    private func selectImageFromPhotos() {
+        let imagePickerController = UIImagePickerController()
+        imagePickerController.delegate = self
+        imagePickerController.sourceType = .photoLibrary
+        present(imagePickerController, animated: true, completion: nil)
+    }
+    // Scan the QR Code from image
+    private func scanQRCode(from image: UIImage) {
+        guard let ciImage = CIImage(image: image) else { return }
+        let context = CIContext(options: nil)
+        let detector = CIDetector(ofType: CIDetectorTypeQRCode, context: context, options: [CIDetectorAccuracy: CIDetectorAccuracyHigh])
+        let features = detector?.features(in: ciImage)
+        if let feature = features?.first as? CIQRCodeFeature {
+            let scannedValue = feature.messageString
+            inputTextField.text = scannedValue
+        }
+    }
+    
+    // ImagePickerController Delegate
+    func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
+        if let selectedImage = info[.originalImage] as? UIImage {
+            codeImageView.image = selectedImage
+            scanQRCode(from: selectedImage)
+        }
+        picker.dismiss(animated: true, completion: nil)
     }
 }
